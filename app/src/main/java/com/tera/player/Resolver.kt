@@ -21,7 +21,7 @@ object Resolver {
             val c = URL("https://$h$path?$q").openConnection() as HttpURLConnection
             c.connectTimeout = 10000; c.readTimeout = 15000
             c.setRequestProperty("User-Agent", UA)
-            c.setRequestProperty("Cookie", "ndus=$ndus")
+            if (ndus.isNotEmpty()) c.setRequestProperty("Cookie", "ndus=$ndus")
             c.setRequestProperty("Referer", "https://$h/")
             c.setRequestProperty("Accept", "application/json, text/plain, */*")
             val body = (if (c.responseCode in 200..299) c.inputStream else c.errorStream).bufferedReader().readText()
@@ -29,7 +29,8 @@ object Resolver {
         } catch (e: Exception) { null }
     }
 
-    fun resolve(link: String, ndus: String): JSONObject {
+    fun resolve(link: String, ndusIn: String): JSONObject {
+        var ndus = ndusIn
         val linkHost = try { URL(link).host } catch (e: Exception) { "" }
         if (!Regex("(tera|4funbox|mirrobox|nephobox|momerybox|dubox|tibibox)", RegexOption.IGNORE_CASE).containsMatchIn(linkHost))
             throw Exception("Ye Terabox link nahi lag raha")
@@ -40,9 +41,12 @@ object Resolver {
         var info: JSONObject? = null
         val notes = ArrayList<String>()
         for (h in HOSTS) {
-            val r = tb("/api/shorturlinfo", mapOf("shorturl" to surl, "root" to 1), ndus, h)
-            if (r != null && r.optInt("errno", -1) == 0) { info = r; host = h; break }
-            notes.add(h + ": " + (if (r == null) "jawab nahi aaya" else "errno " + r.opt("errno")))
+            for (nd in listOf(ndus, "")) {
+                val r = tb("/api/shorturlinfo", mapOf("shorturl" to surl, "root" to 1), nd, h)
+                if (r != null && r.optInt("errno", -1) == 0) { info = r; host = h; ndus = nd; break }
+                notes.add(h + (if (nd.isEmpty()) " (bina cookie)" else "") + ": " + (r?.toString()?.take(200) ?: "jawab nahi aaya"))
+            }
+            if (info != null) break
         }
         if (info == null)
             throw Exception("Terabox se info nahi mili.\n" + notes.joinToString("\n"))
@@ -77,7 +81,8 @@ object Resolver {
             files.put(JSONObject().put("name", name).put("mp4", it.optString("dlink")).put("hls", hls))
         }
         if (files.length() == 0) throw Exception("Is link me koi video nahi mili")
-        return JSONObject().put("files", files).put("headers", JSONObject()
-            .put("User-Agent", UA).put("Cookie", "ndus=$ndus").put("Referer", "https://$host/"))
+        val headers = JSONObject().put("User-Agent", UA).put("Referer", "https://$host/")
+        if (ndus.isNotEmpty()) headers.put("Cookie", "ndus=$ndus")
+        return JSONObject().put("files", files).put("headers", headers)
     }
 }
