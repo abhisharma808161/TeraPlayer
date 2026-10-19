@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application
+        android:label="Tera Player"
+        android:usesCleartextTraffic="false"
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="terabox.com" />
+                <data android:host="www.terabox.com" />
+                <data android:host="teraboxapp.com" />
+                <data android:host="www.teraboxapp.com" />
+                <data android:host="1024terabox.com" />
+                <data android:host="www.1024terabox.com" />
+                <data android:host="4funbox.com" />
+                <data android:host="www.4funbox.com" />
+                <data android:host="terabox.app" />
+                <data android:host="mirrobox.com" />
+                <data android:host="nephobox.com" />
+                <data android:host="freeterabox.com" />
+                <data android:host="momerybox.com" />
+                <data android:host="teraboxshare.com" />
+                <data android:pathPrefix="/s/" />
+                <data android:pathPrefix="/sharing/" />
+                <data android:pathPrefix="/wap/" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".PlayerActivity"
+            android:exported="false"
+            android:screenOrientation="sensor"
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout" />
+    </application>
+</manifest>
