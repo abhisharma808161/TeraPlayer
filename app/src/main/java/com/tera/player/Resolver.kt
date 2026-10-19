@@ -10,20 +10,20 @@ object Resolver {
     private const val UA = "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36"
     private val BASE = linkedMapOf<String, Any>("app_id" to 250528, "web" to 1, "channel" to "dubox", "clienttype" to 0)
 
-    private val HOSTS = listOf("www.terabox.com", "www.1024terabox.com", "1024terabox.com")
+    private val HOSTS = listOf("www.1024terabox.com", "1024terabox.com", "www.terabox.com")
     private var host = HOSTS[0]
 
     private fun enc(s: String) = URLEncoder.encode(s, "UTF-8")
 
     private fun tb(path: String, extra: Map<String, Any>, ndus: String, h: String = host): JSONObject? {
         val q = (BASE + extra).entries.joinToString("&") { enc(it.key) + "=" + enc(it.value.toString()) }
-        val c = URL("https://$h$path?$q").openConnection() as HttpURLConnection
-        c.connectTimeout = 25000; c.readTimeout = 25000
-        c.setRequestProperty("User-Agent", UA)
-        c.setRequestProperty("Cookie", "ndus=$ndus")
-        c.setRequestProperty("Referer", "https://$h/")
-        c.setRequestProperty("Accept", "application/json, text/plain, */*")
         return try {
+            val c = URL("https://$h$path?$q").openConnection() as HttpURLConnection
+            c.connectTimeout = 10000; c.readTimeout = 15000
+            c.setRequestProperty("User-Agent", UA)
+            c.setRequestProperty("Cookie", "ndus=$ndus")
+            c.setRequestProperty("Referer", "https://$h/")
+            c.setRequestProperty("Accept", "application/json, text/plain, */*")
             val body = (if (c.responseCode in 200..299) c.inputStream else c.errorStream).bufferedReader().readText()
             JSONObject(body)
         } catch (e: Exception) { null }
@@ -38,12 +38,14 @@ object Resolver {
             ?: throw Exception("Link se share ID nahi mili")
 
         var info: JSONObject? = null
+        val notes = ArrayList<String>()
         for (h in HOSTS) {
             val r = tb("/api/shorturlinfo", mapOf("shorturl" to surl, "root" to 1), ndus, h)
             if (r != null && r.optInt("errno", -1) == 0) { info = r; host = h; break }
+            notes.add(h + ": " + (if (r == null) "jawab nahi aaya" else "errno " + r.opt("errno")))
         }
         if (info == null)
-            throw Exception("Terabox ne info nahi di. Cookie expire/galat ho sakti hai, link private ho sakta hai, ya network block hai.")
+            throw Exception("Terabox se info nahi mili.\n" + notes.joinToString("\n"))
         val shareid = info.opt("shareid")?.toString() ?: ""
         val uk = info.opt("uk")?.toString() ?: ""
         val sign = info.optString("sign")
